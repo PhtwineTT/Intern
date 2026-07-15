@@ -22,13 +22,8 @@ namespace AuthAPI.Controllers
             _configuration = configuration;
         }
         [HttpPost("register")]
-        public IActionResult CreateUser(UserDto request)
+        public async Task<IActionResult> Register(RegisterDto request)
         {
-            // Loại khoảng trắng
-            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-            {
-                return BadRequest("Tên tài khoản và mật khẩu không được để trống");
-            }
             // Kiểm tra và lưu vào Database
             bool checkUpper = _context.Users.Any(u => EF.Functions.Collate(u.Username, "SQL_Latin1_General_CP1_CS_AS") == request.Username);
             if (checkUpper)
@@ -46,13 +41,8 @@ namespace AuthAPI.Controllers
             return Ok("Đăng ký thành công");
         }
         [HttpPost("login")]
-        public IActionResult LogIn(UserDto request)
+        public async Task<IActionResult> Login(LoginDto request)
         {
-            // Loại khoảng trắng
-            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-            {
-                return BadRequest("Hãy nhập đầy đủ tên tài khoản và mật khẩu");
-            }
             // Đối chiếu trong Database
             var user = _context.Users.FirstOrDefault(u => EF.Functions.Collate(u.Username, "SQL_Latin1_General_CP1_CS_AS") == request.Username);
             if (user == null)
@@ -66,7 +56,7 @@ namespace AuthAPI.Controllers
             }
             // Tạo token
             string token = CreateToken(user);
-            // In token ra màn hình để copy dán vào Swagger
+            // In token ra màn hình
             return Ok(new
             {
                 Message = "Đăng nhập thành công",
@@ -94,7 +84,6 @@ namespace AuthAPI.Controllers
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
             return jwt;
         }
-        // Test cấu hình
         [HttpGet("profile")]
         [Authorize]
         public IActionResult Profile()
