@@ -12,5 +12,9 @@ namespace AuthAPI.DTO
         [MinLength(8, ErrorMessage = "Mật khẩu phải dài ít nhất 8 ký tự")]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", ErrorMessage = "Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt")]
         public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email không được để trống")]
+        [EmailAddress(ErrorMessage = "Nhập đúng định dạng Email")]
+        public string Email { get; set; } = string.Empty;
     }
 }

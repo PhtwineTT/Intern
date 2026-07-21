@@ -8,5 +8,6 @@
         public string? RefreshToken { get; set; }
         public DateTime ExpiryTime { get; set; }
         public string Role { get; set; } = "User";
+        public string Email { get; set; } = string.Empty;
     }
 }

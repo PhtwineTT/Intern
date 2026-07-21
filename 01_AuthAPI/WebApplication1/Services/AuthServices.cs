@@ -26,12 +26,14 @@ namespace AuthAPI.Services
             // Ép kiểu Username để phân biệt chữ hoa chữ thường
             bool checkUpper = await _context.Users.AnyAsync(u => EF.Functions.Collate(u.Username, "SQL_Latin1_General_CP1_CS_AS") == request.Username);
             if (checkUpper) return "Tên tài khoản đã tồn tại";
+            if (await _context.Users.AnyAsync(u => u.Email == request.Email));
             // Dùng BCrypt đẻ hash mật khẩu và sinh ra 1 chuỗi kí tự ngẫu nhiên
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
             var user = new User()
             {
                 Username = request.Username,
-                Password = passwordHash
+                Password = passwordHash,
+                Email = request.Password,
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
