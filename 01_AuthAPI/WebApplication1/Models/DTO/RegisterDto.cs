@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-namespace AuthAPI.DTO
+namespace AuthAPI.Models.DTO
 {
     public class RegisterDto
     {

@@ -1,11 +1,16 @@
 using AuthAPI.DATA;
+using AuthAPI.Repositories;
+using AuthAPI.Repositories.Interfaces;
 using AuthAPI.Services;
+using AuthAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
+
+// 1. API & SWAGGER
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -34,12 +39,24 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+// 2. DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
-builder.Services.AddScoped<IServices, AuthService>();
+
+
+// 3. ĐĂNG KÝ DEPENDENCY INJECTION
+
+// Unit Of Work & Database
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Services
+builder.Services.AddScoped<IAuthServcies, AuthService>();
 builder.Services.AddSingleton<RateLimitServices>();
+
+// 4. BẢO MẬT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -54,7 +71,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
     });
+
+// 5. XÂY DỰNG ỨNG DỤNG & PIPELINE
 var app = builder.Build();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

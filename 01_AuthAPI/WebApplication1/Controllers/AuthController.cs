@@ -1,67 +1,41 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using AuthAPI.DTO;
 using Microsoft.AspNetCore.Authorization;
-using AuthAPI.Services;
 using AuthAPI.Filters;
+using AuthAPI.Models.DTO;
+using AuthAPI.Services.Interfaces;
 namespace AuthAPI.Controllers
 {
     [Route("api/[controller]")]
-    // Tự động xác thực 
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController(IAuthServcies authService) : ControllerBase
     {
-        // Dependency Injection qua interface (IServices)
-        private readonly IServices _authService;
-        public AuthController(IServices authService)
-        {
-            _authService = authService;
-        }
-
-        // API đăng kí, dùng rate limit để giới hạn
         [HttpPost("register")]
         [RateLimit(maxRequest: 3, timeLimit: 10)]
         public async Task<IActionResult> Register(RegisterDto request)
         {
-            var result = await _authService.RegisterAsync(request);
-            if (result != "Success") return BadRequest(result);
-
-            return Ok("Đăng ký thành công");
+            var result = await authService.RegisterAsync(request);
+            return result == "Success" ? Ok("Đăng ký thành công") : BadRequest(result);
         }
 
-        // API đăng nhập, dùng rate limit để giới hạn
         [HttpPost("login")]
         [RateLimit(maxRequest: 5, timeLimit: 60)]
         public async Task<IActionResult> Login(LoginDto request)
         {
-            var (tokens, error) = await _authService.LoginAsync(request);
-            if (tokens == null) return BadRequest(error);
-
-            return Ok(tokens);
+            var (tokens, error) = await authService.LoginAsync(request);
+            return tokens != null ? Ok(tokens) : BadRequest(error);
         }
 
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken(TokenDto request)
         {
-            var (tokens, error) = await _authService.RefreshTokenAsync(request);
-            if (tokens == null) return BadRequest(error);
-
-            return Ok(tokens);
+            var (tokens, error) = await authService.RefreshTokenAsync(request);
+            return tokens != null ? Ok(tokens) : BadRequest(error);
         }
 
-        // API xác thực người dùng qua token
-        [HttpGet("profile")]
-        [Authorize]
-        public IActionResult Profile()
-        {
-            return Ok("Xác thực thành công");
-        }
+        [HttpGet("profile"), Authorize]
+        public IActionResult Profile() => Ok("Xác thực thành công");
 
-        // Phân quyền
-        [HttpGet("admin-only")]
-        [Authorize(Roles = "Admin")]
-        public IActionResult OnlyAdminEndpoint()
-        {
-            return Ok(new { message = "Bạn đã vào quyền Admin" });
-        }
+        [HttpGet("admin-only"), Authorize(Roles = "Admin")]
+        public IActionResult OnlyAdminEndpoint() => Ok(new { message = "Bạn đã vào quyền Admin" });
     }
 }
