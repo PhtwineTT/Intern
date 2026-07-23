@@ -46,14 +46,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-
 // 3. ĐĂNG KÝ DEPENDENCY INJECTION
-
-// Unit Of Work & Database
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-// Services
 builder.Services.AddScoped<IAuthServcies, AuthService>();
+builder.Services.AddScoped<IClubEventServices, ClubEventServices>();
+builder.Services.AddScoped<IRewardServices, RewardServices>();
+builder.Services.AddScoped<IRoomListingServices, RoomListingServices>();
 builder.Services.AddSingleton<RateLimitServices>();
 
 // 4. BẢO MẬT
@@ -74,7 +72,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // 5. XÂY DỰNG ỨNG DỤNG & PIPELINE
 var app = builder.Build();
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

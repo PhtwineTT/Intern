@@ -29,6 +29,10 @@ namespace AuthAPI.Services
             {
                 Id = e.Id,
                 Name = e.Name,
+                Theme = e.Theme,
+                StartTime = e.StartTime,
+                MaxAttendes = e.MaxAttendes,
+                Location = e.Location,
             };
         }
         public async Task<string> CreateEventAsync(ClubEventDto request)
@@ -38,6 +42,11 @@ namespace AuthAPI.Services
                 var newEvent = new ClubEvent
                 {
                     Name = request.Name,
+                    Theme = request.Theme,
+                    StartTime = request.StartTime,
+                    MaxAttendes = request.MaxAttendes,
+                    Location = request.Location,
+
                 };
                 await unitOfWork.ClubEvents.AddAsync(newEvent);
                 await unitOfWork.CompleteAsync();
@@ -55,6 +64,10 @@ namespace AuthAPI.Services
             try
             {
                 existingEvent.Name = request.Name;
+                existingEvent.Theme = request.Theme;
+                existingEvent.StartTime = request.StartTime;
+                existingEvent.MaxAttendes = request.MaxAttendes;
+                existingEvent.Location = request.Location;
 
                 unitOfWork.ClubEvents.Update(existingEvent);
                 await unitOfWork.CompleteAsync();
