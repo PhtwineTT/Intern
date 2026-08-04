@@ -1,4 +1,4 @@
-﻿using AuthAPI.Models.DTO;
+﻿using AuthAPI.Models.DTO.Auth;
 namespace AuthAPI.Services.Interfaces
 {
     public interface IAuthServcies
@@ -6,5 +6,6 @@ namespace AuthAPI.Services.Interfaces
         Task<string> RegisterAsync(RegisterDto request);
         Task<(TokenDto? tokens, string error)> LoginAsync(LoginDto request);
         Task<(TokenDto? tokens, string error)> RefreshTokenAsync(TokenDto request);
+        Task<bool> RoleAsync(int userId);
     }
 }

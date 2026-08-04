@@ -1,4 +1,4 @@
-﻿namespace AuthAPI.Models.DTO
+﻿namespace AuthAPI.Models.DTO.Auth
 {
     public class TokenDto
     {

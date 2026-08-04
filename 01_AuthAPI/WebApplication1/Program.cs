@@ -1,4 +1,6 @@
+using AuthAPi.Services.Interface;
 using AuthAPI.DATA;
+using AuthAPI.Mappings;
 using AuthAPI.Repositories;
 using AuthAPI.Repositories.Interfaces;
 using AuthAPI.Services;
@@ -8,10 +10,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. API & SWAGGER
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -49,10 +52,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // 3. ĐĂNG KÝ DEPENDENCY INJECTION
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthServcies, AuthService>();
-builder.Services.AddScoped<IClubEventServices, ClubEventServices>();
 builder.Services.AddScoped<IRewardServices, RewardServices>();
-builder.Services.AddScoped<IRoomListingServices, RoomListingServices>();
+builder.Services.AddScoped<ITournamentServices, TournamentServices>();
+builder.Services.AddScoped<ITeamServices, TeamServices>();
+builder.Services.AddScoped<IVenueServices, VenueServices>();
 builder.Services.AddSingleton<RateLimitServices>();
+builder.Services.AddScoped<IFileUploadServices, CloudinaryFileUploadServices>();
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile(typeof(MappingProfile));
+});
 
 // 4. BẢO MẬT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

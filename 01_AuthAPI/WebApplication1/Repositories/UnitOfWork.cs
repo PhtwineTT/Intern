@@ -1,22 +1,27 @@
-﻿using AuthAPI.Repositories.Interfaces;
+﻿using AuthAPI.DATA;
 using AuthAPI.Models;
-using AuthAPI.DATA;
+using AuthAPI.Repositories.Interfaces;
 namespace AuthAPI.Repositories
 {
     public class UnitOfWork : IUnitOfWork
     {
         private readonly AppDbContext _context;
         public IGenericRepository<User> Users { get; private set; }
-        public IGenericRepository<ClubEvent> ClubEvents { get; private set; }
+        public IGenericRepository<Tournament> Tournaments { get; private set; }
+        public IGenericRepository<Team> Teams { get; private set; }
+        public IGenericRepository<TeamMember> TeamMembers { get; private set; }
+        public IGenericRepository<Venue> Venues { get; private set; }
         public IGenericRepository<Reward> Rewards { get; private set; }
-        public IGenericRepository<RoomListing> RoomListing { get; private set; }
+
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
             Users = new GenericRepository<User>(_context);
-            ClubEvents = new GenericRepository<ClubEvent>(_context);
+            Tournaments = new GenericRepository<Tournament>(_context);
+            Teams = new GenericRepository<Team>(_context);
+            TeamMembers = new GenericRepository<TeamMember>(_context);
+            Venues = new GenericRepository<Venue>(_context);
             Rewards = new GenericRepository<Reward>(_context);
-            RoomListing = new GenericRepository<RoomListing>(_context);
         }
         public async Task<int> CompleteAsync()
         {

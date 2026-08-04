@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AuthAPI.Models.DTO
+namespace AuthAPI.Models
 {
-    public class UserDTO
+    public class UserDto
     {
         public int Id { get; set; }
         public string Username { get; set; } = string.Empty;

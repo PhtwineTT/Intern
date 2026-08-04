@@ -1,85 +1,67 @@
 ﻿using AuthAPI.Models;
-using AuthAPI.Models.DTO;
+using AuthAPI.Models.DTO.Auth;
+using AuthAPI.Models.DTO.Game;
 using AuthAPI.Repositories.Interfaces;
 using AuthAPI.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
+using AutoMapper;
+using System.Linq.Expressions;
 
 namespace AuthAPI.Services
 {
-    public class RewardServices(IUnitOfWork unitOfWork) : IRewardServices
+    public class RewardServices : IRewardServices
     {
-        public async Task<IEnumerable<RewardDto>> GetAllRewardAsync()
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        public RewardServices(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            var rewards = await unitOfWork.Rewards.GetAllAsync();
-            return rewards.Select(r => new RewardDto
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
+        public async Task<IEnumerable<RewardDto>> GetAllRewardsAsync(QueryParameters queryParams)
+        {
+            Expression<Func<Reward, bool>>? filter = null;
+            if (!string.IsNullOrWhiteSpace(queryParams.SearchTerm))
             {
-                Id = r.Id,
-                ItemName = r.ItemName,
-                StockQuantity = r.StockQuantity,
-                PointsRequired = r.PointsRequired
-            });
+                filter = t => t.ItemName.ToLower().Contains(queryParams.SearchTerm.ToLower());
+            }
+            var rewards = await _unitOfWork.Rewards.GetPagedAsync(
+                pageNumber: queryParams.PageNumber,
+                pageSize: queryParams.PageSize,
+                filter: filter,
+                includeProperties: ""
+                );
+            return _mapper.Map<IEnumerable<RewardDto>>(rewards);
         }
         public async Task<RewardDto?> GetRewardByIdAsync(int id)
         {
-            var r = await unitOfWork.Rewards.GetByIdAsync(id);
-            if (r == null) return null;
-
-            return new RewardDto
-            {
-                Id = r.Id,
-                ItemName = r.ItemName,
-                StockQuantity = r.StockQuantity,
-                PointsRequired = r.PointsRequired
-            };
+            var reward = await _unitOfWork.Rewards.GetByIdAsync(id);
+            if (reward == null) return null;
+            return _mapper.Map<RewardDto>(reward);
         }
-        public async Task<string> AddRewardAsync(RewardDto request)
+        public async Task<string> CreateRewardAsync(CreateRewardDto request)
         {
-            try
-            {
-                var newReward = new Reward
-                {
-                    ItemName = request.ItemName,
-                    StockQuantity = request.StockQuantity,
-                    PointsRequired = request.PointsRequired
-                };
-
-                await unitOfWork.Rewards.AddAsync(newReward);
-                await unitOfWork.CompleteAsync();
-                return "Success";
-            }
-            catch (DbUpdateException)
-            {
-                return "Lỗi khi lưu phần thưởng. Dữ liệu vi phạm ràng buộc dưới Database.";
-            }
+            var reward = _mapper.Map<Reward>(request);
+            await _unitOfWork.Rewards.AddAsync(reward);
+            await _unitOfWork.CompleteAsync();
+            return "Đã tạo";
         }
-        public async Task<string> UpdateRewardAsync(int id, RewardDto request)
+        public async Task<bool> UpdateRewardAsync(int id, CreateRewardDto request)
         {
-            var existing = await unitOfWork.Rewards.GetByIdAsync(id);
-            if (existing == null) return "Không tìm thấy phần thưởng";
-
-            try
-            {
-                existing.ItemName = request.ItemName;
-                existing.StockQuantity = request.StockQuantity;
-                existing.PointsRequired = request.PointsRequired;
-
-                unitOfWork.Rewards.Update(existing);
-                await unitOfWork.CompleteAsync();
-                return "Success";
-            }
-            catch (DbUpdateException)
-            {
-                return "Lỗi khi cập nhật. Dữ liệu vi phạm ràng buộc dưới Database.";
-            }
+            var reward = await _unitOfWork.Rewards.GetByIdAsync(id);
+            if (reward == null) return false;
+            _mapper.Map(request, reward);
+            _unitOfWork.Rewards.Update(reward);
+            await _unitOfWork.CompleteAsync();
+            return true;
         }
-        public async Task<string> DeleteRewardAsync(int id)
+        public async Task<bool> DeleteRewardAsync(int id)
         {
-            var existing = await unitOfWork.Rewards.GetByIdAsync(id);
-            if (existing == null) return "Không tìm thấy phần thưởng";
+            var reward = await _unitOfWork.Rewards.GetByIdAsync(id);
+            if (reward == null) return false;
 
-            unitOfWork.Rewards.Delete(existing);
-            await unitOfWork.CompleteAsync();
-            return "Success";
+            _unitOfWork.Rewards.Delete(reward);
+            await _unitOfWork.CompleteAsync();
+            return true;
         }
     }
 }

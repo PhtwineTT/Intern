@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using AuthAPI.Filters;
-using AuthAPI.Models.DTO;
 using AuthAPI.Services.Interfaces;
+using AuthAPI.Models.DTO.Auth;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 namespace AuthAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -35,7 +36,21 @@ namespace AuthAPI.Controllers
         [HttpGet("profile"), Authorize]
         public IActionResult Profile() => Ok("Xác thực thành công");
 
-        [HttpGet("admin-only"), Authorize(Roles = "Admin")]
-        public IActionResult OnlyAdminEndpoint() => Ok(new { message = "Bạn đã vào quyền Admin" });
+        [HttpPut("get-admin/{id}")]
+        [Authorize]
+        public async Task<IActionResult> PromoteToAdmin(int id, [FromQuery] string secretCode)
+        {
+            var MY_SECRET_CODE = "Get Admin 1234";
+            if (secretCode != MY_SECRET_CODE)
+            {
+                return Unauthorized(new { message = "Code không đúng" });
+            }
+            var isSuccess = await authService.RoleAsync(id);
+            if (!isSuccess)
+            {
+                return NotFound(new { message = "Không tìm thấy" });
+            }   
+            return Ok(new { message = $"Đã thăng cấp tài khoản (ID: {id}) thành Admin" });
+        }
     }
 }

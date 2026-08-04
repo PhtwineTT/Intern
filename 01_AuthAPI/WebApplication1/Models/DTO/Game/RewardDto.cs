@@ -1,10 +1,13 @@
-﻿namespace AuthAPI.Models.DTO
+﻿namespace AuthAPI.Models.DTO.Game
 {
-    public class RewardDto
+    public class CreateRewardDto
     {
-        public int Id { get; set; }
         public string ItemName { get; set; } = string.Empty;
         public int StockQuantity { get; set; }
         public int PointsRequired { get; set; }
+    }
+    public class RewardDto : CreateTeamDto
+    {
+        public int Id { get; set; }
     }
 }

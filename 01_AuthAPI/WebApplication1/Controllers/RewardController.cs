@@ -1,51 +1,61 @@
-﻿using AuthAPI.Models.DTO;
+﻿using AuthAPI.Models.DTO.Auth;
+using AuthAPI.Models.DTO.Game;
 using AuthAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class RewardController(IRewardServices rewardServices) : ControllerBase
+    public class RewardController : ControllerBase
     {
-        [HttpGet("get-all")]
-        public async Task<IActionResult> GetAllRewards()
+        private readonly IRewardServices _rewardServices;
+
+        public RewardController(IRewardServices rewardServices)
         {
-            var rewards = await rewardServices.GetAllRewardAsync();
-            return Ok(rewards);
+            _rewardServices = rewardServices;
         }
 
-        [HttpGet("get-by-id/{id}")]
+        [HttpGet("get-all")]
+        public async Task<IActionResult> GetAllRewards([FromQuery] QueryParameters queryParams)
+        {
+            var result = await _rewardServices.GetAllRewardsAsync(queryParams);
+            return Ok(result);
+        }
+
+        [HttpGet("find/{id}")]
         public async Task<IActionResult> GetRewardById(int id)
         {
-            var reward = await rewardServices.GetRewardByIdAsync(id);
-            if (reward == null) return NotFound(new { message = "Không tìm thấy phần thưởng" }); // Trả về 404
-            return Ok(reward);
+            var result = await _rewardServices.GetRewardByIdAsync(id);
+            if (result == null) return NotFound(new { message = "Không tìm thấy" });
+            return Ok(result);
         }
 
-        [HttpPost("add")]
-        public async Task<IActionResult> AddReward([FromBody] RewardDto request)
+        [HttpPost("create")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> CreateReward([FromBody] CreateRewardDto request)
         {
-            var result = await rewardServices.AddRewardAsync(request);
-            if (result != "Success") return BadRequest(new { message = result });
-            return Ok(new { message = "Thêm phần thưởng thành công" });
+            var result = await _rewardServices.CreateRewardAsync(request);
+            return Ok(new { message = result });
         }
 
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateReward(int id, [FromBody] RewardDto request)
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> UpdateReward(int id, [FromBody] CreateRewardDto request)
         {
-            var result = await rewardServices.UpdateRewardAsync(id, request);
-            if (result == "Không tìm thấy phần thưởng") return NotFound(new { message = result });
-            if (result != "Success") return BadRequest(new { message = result });
-            return Ok(new { message = "Cập nhật phần thưởng thành công" });
+            var isSuccess = await _rewardServices.UpdateRewardAsync(id, request);
+            if (!isSuccess) return NotFound(new { message = "Không tìm thấy" });
+            return Ok(new { message = "Cập nhật thành công" });
         }
 
         [HttpDelete("delete/{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteReward(int id)
         {
-            var result = await rewardServices.DeleteRewardAsync(id);
-            if (result != "Success") return NotFound(new { message = result });
-            return Ok(new { message = "Xóa phần thưởng thành công" });
+            var isSuccess = await _rewardServices.DeleteRewardAsync(id);
+            if (!isSuccess) return NotFound(new { message = "Không tìm thấy" });
+            return Ok(new { message = "Đã xóa" });
         }
     }
 }

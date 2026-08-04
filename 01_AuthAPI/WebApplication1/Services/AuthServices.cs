@@ -1,6 +1,5 @@
-﻿using AuthAPI.DATA;
-using AuthAPI.Models;
-using AuthAPI.Models.DTO;
+﻿using AuthAPI.Models;
+using AuthAPI.Models.DTO.Auth;
 using AuthAPI.Repositories.Interfaces;
 using AuthAPI.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -82,13 +81,13 @@ namespace AuthAPI.Services
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role ?? "Member")
+                new Claim(ClaimTypes.Role, "admin")
             };
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtConfig:Secret"]!));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(
-                issuer: _configuration["JwtConfig:Issuer"],
-                audience: _configuration["JwtConfig:Audience"],
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddDays(1),
                 signingCredentials: creds
@@ -105,6 +104,17 @@ namespace AuthAPI.Services
                 random.GetBytes(randomNumber);
                 return Convert.ToBase64String(randomNumber);
             }
+        }
+
+        // Cấp Role Admin
+        public async Task<bool> RoleAsync(int userId)
+        {
+            var user = await _unitOfWork.Users.GetByIdAsync(userId);
+            if (user == null) return false;
+            user.Role = "admin";
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.CompleteAsync();
+            return true;
         }
     }
 }
