@@ -12,16 +12,18 @@ namespace AuthAPI.Repositories
         public IGenericRepository<TeamMember> TeamMembers { get; private set; }
         public IGenericRepository<Venue> Venues { get; private set; }
         public IGenericRepository<Reward> Rewards { get; private set; }
+        public IGenericRepository<TournamentRegistration> TournamentRegistrations { get; private set; }
 
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
             Users = new GenericRepository<User>(_context);
-            Tournaments = new GenericRepository<Tournament>(_context);
+            Tournaments= new GenericRepository<Tournament>(_context);
             Teams = new GenericRepository<Team>(_context);
             TeamMembers = new GenericRepository<TeamMember>(_context);
             Venues = new GenericRepository<Venue>(_context);
             Rewards = new GenericRepository<Reward>(_context);
+            TournamentRegistrations = new GenericRepository<TournamentRegistration>(_context);
         }
         public async Task<int> CompleteAsync()
         {

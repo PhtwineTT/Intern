@@ -6,5 +6,7 @@
         public string ItemName { get; set; } = string.Empty;
         public int StockQuantity { get; set; }
         public int PointsRequired { get; set; }
+        public int TournamentId { get; set; }
+        public Tournament? Tournament { get; set; }
     }
 }

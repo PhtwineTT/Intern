@@ -4,6 +4,7 @@ using AuthAPI.Models.DTO.Game;
 using AuthAPI.Repositories.Interfaces;
 using AuthAPI.Services.Interfaces;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace AuthAPI.Services
@@ -11,13 +12,11 @@ namespace AuthAPI.Services
     public class RewardServices : IRewardServices
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
-        public RewardServices(IUnitOfWork unitOfWork, IMapper mapper)
+        public RewardServices(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _mapper = mapper;
         }
-        public async Task<IEnumerable<RewardDto>> GetAllRewardsAsync(QueryParameters queryParams)
+        public async Task<IEnumerable<RewardReponseDto>> GetAllRewardsAsync(QueryParameters queryParams)
         {
             Expression<Func<Reward, bool>>? filter = null;
             if (!string.IsNullOrWhiteSpace(queryParams.SearchTerm))
@@ -28,28 +27,38 @@ namespace AuthAPI.Services
                 pageNumber: queryParams.PageNumber,
                 pageSize: queryParams.PageSize,
                 filter: filter,
-                includeProperties: ""
+                include: q => q.Include(r => r.Tournament)
                 );
-            return _mapper.Map<IEnumerable<RewardDto>>(rewards);
+            return rewards.Select(r => r.ToReponseDto());
         }
-        public async Task<RewardDto?> GetRewardByIdAsync(int id)
+        public async Task<RewardReponseDto?> GetRewardByIdAsync(int id)
         {
             var reward = await _unitOfWork.Rewards.GetByIdAsync(id);
             if (reward == null) return null;
-            return _mapper.Map<RewardDto>(reward);
+            return reward.ToReponseDto();
         }
-        public async Task<string> CreateRewardAsync(CreateRewardDto request)
+        public async Task<string> CreateRewardAsync(RewardUpserDto request)
         {
-            var reward = _mapper.Map<Reward>(request);
+            var tournamentExists = await _unitOfWork.Tournaments.GetByIdAsync(request.TournamentId);
+            if (tournamentExists == null)
+            {
+                return "Giải đấu không tồn tại";
+            }
+            var reward = request.ToEntity();
             await _unitOfWork.Rewards.AddAsync(reward);
             await _unitOfWork.CompleteAsync();
             return "Đã tạo";
         }
-        public async Task<bool> UpdateRewardAsync(int id, CreateRewardDto request)
+        public async Task<bool> UpdateRewardAsync(int id, RewardUpserDto request)
         {
             var reward = await _unitOfWork.Rewards.GetByIdAsync(id);
             if (reward == null) return false;
-            _mapper.Map(request, reward);
+            if (reward.TournamentId != request.TournamentId)
+            {
+                var tournamentExists = await _unitOfWork.Tournaments.GetByIdAsync(request.TournamentId);
+                if (tournamentExists == null) return false;
+            }
+            request.UpdateEntity(reward);
             _unitOfWork.Rewards.Update(reward);
             await _unitOfWork.CompleteAsync();
             return true;

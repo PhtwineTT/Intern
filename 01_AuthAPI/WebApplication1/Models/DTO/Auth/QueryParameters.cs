@@ -7,7 +7,7 @@
         public int PageSize
         {
             get => _pageSize;
-            set => _pageSize = (value > 50) ? value : 50;
+            set => _pageSize = (value > 50) ? 50 : (value < 1 ? 1 : value);
         }
         public string? SearchTerm { get; set; }
     }

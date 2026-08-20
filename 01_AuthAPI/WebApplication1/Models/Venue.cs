@@ -3,7 +3,7 @@
     public class CreateVenue
     {
         public string Name { get; set; } = string.Empty;
-        public int ToltalPCs { get; set; }
+        public int TotalPCs { get; set; }
         public string HardwareSpecs { get; set; } = string.Empty;
     }
     public class Venue : CreateVenue

@@ -4,6 +4,7 @@ using AuthAPI.Models.DTO.Game;
 using AuthAPI.Repositories.Interfaces;
 using AuthAPI.Services.Interfaces;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 namespace AuthAPI.Services
 {
@@ -16,38 +17,52 @@ namespace AuthAPI.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task <IEnumerable<TeamMemberDto>> GetAllMembersAsync(QueryParameters queryParams)
+        public async Task<IEnumerable<TeamMemberResponseDto>> GetAllMembersAsync(QueryParameters queryParams)
         {
             Expression<Func<TeamMember, bool>>? filter = null;
             if (!string.IsNullOrWhiteSpace(queryParams.SearchTerm))
             {
-                filter = t => t.InGameName.ToLower().Contains(queryParams.SearchTerm.ToLower());
+                filter = tm => tm.InGameName.ToLower().Contains(queryParams.SearchTerm.ToLower());
             }
-            var members = await _unitOfWork.TeamMembers.GetPagedAsync(
-                pageNumber: queryParams.PageSize,
+            var teamMembers = await _unitOfWork.TeamMembers.GetPagedAsync(
+                pageNumber: queryParams.PageNumber,
                 pageSize: queryParams.PageSize,
                 filter: filter,
-                includeProperties: "Team");
-            return _mapper.Map<IEnumerable<TeamMemberDto>>(members);
+                include: q => q.Include(tm => tm.Team)
+            );
+            return teamMembers.Select(tm => tm.ToResponseDto());
         }
-        public async Task<TeamMemberDto?> GetMemberByIdAsync(int id)
+        public async Task<TeamMemberResponseDto?> GetMemberByIdAsync(int id)
         {
-            var member = await _unitOfWork.TeamMembers.GetByIdAsync(id);
-            if (member == null) return null;
-            return _mapper.Map<TeamMemberDto>(member);
+            var teamMember = await _unitOfWork.TeamMembers.FirstOrDefaultAsync(
+                tm => tm.Id == id,
+                include: q => q.Include(tm => tm.Team)
+                );
+            if (teamMember == null) return null;
+            return teamMember.ToResponseDto();
         }
-        public async Task<string> CreateMemberAsync(CreateTeamMemberDto request)
+        public async Task<string> CreateMemberAsync(TeamMemberUpserDto request)
         {
+            var TeamExists = await _unitOfWork.Teams.GetByIdAsync(request.TeamId);
+            if (TeamExists == null)
+            {
+                return "Đội không tồn tại";
+            }
             var member = _mapper.Map<TeamMember>(request);
             await _unitOfWork.TeamMembers.AddAsync(member);
             await _unitOfWork.CompleteAsync();
             return "Cập nhật thành công";
         }
-        public async Task<bool> UpdateMemberAsync(int id, CreateTeamMemberDto request)
+        public async Task<bool> UpdateMemberAsync(int id, TeamMemberUpserDto request)
         {
             var member = await _unitOfWork.TeamMembers.GetByIdAsync(id);
             if (member == null) return false;
-            _mapper.Map(request, member);
+            if (member.TeamId != request.TeamId)
+            {
+                var teamExists = await _unitOfWork.Teams.GetByIdAsync(request.TeamId);
+                if (teamExists == null) return false;
+            }
+            request.UpdateEntity(member);
             _unitOfWork.TeamMembers.Update(member);
             await _unitOfWork.CompleteAsync();
             return true;

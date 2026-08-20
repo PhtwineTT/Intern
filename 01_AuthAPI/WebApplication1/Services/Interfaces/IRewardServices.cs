@@ -5,10 +5,10 @@ namespace AuthAPI.Services.Interfaces
 {
     public interface IRewardServices
     {
-        Task<IEnumerable<RewardDto>> GetAllRewardsAsync(QueryParameters queryParams);
-        Task<RewardDto?> GetRewardByIdAsync(int id);
-        Task<string> CreateRewardAsync(CreateRewardDto request);
-        Task<bool> UpdateRewardAsync(int id, CreateRewardDto request);
+        Task<IEnumerable<RewardReponseDto>> GetAllRewardsAsync(QueryParameters queryParams);
+        Task<RewardReponseDto?> GetRewardByIdAsync(int id);
+        Task<string> CreateRewardAsync(RewardUpserDto request);
+        Task<bool> UpdateRewardAsync(int id, RewardUpserDto request);
         Task<bool> DeleteRewardAsync(int id);
     }
 }

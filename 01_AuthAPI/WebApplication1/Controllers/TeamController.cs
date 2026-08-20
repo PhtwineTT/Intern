@@ -3,6 +3,7 @@ using AuthAPI.Models.DTO.Game;
 using AuthAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 namespace AuthAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -32,29 +33,38 @@ namespace AuthAPI.Controllers
             }
             return Ok(result);
         }
-        [HttpPost("create"), Authorize(Roles = "admin")]
-        public async Task<IActionResult> CreateTeam([FromBody] CreateTeamDto request)
+        [HttpPost("create"), Authorize]
+        public async Task<IActionResult> CreateTeam([FromBody] TeamUpserDto request)
         {
-            var result = await _teamServices.CreateTeamAsync(request);
-            return Ok(new { message = "Đã tạo" });
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if(!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized(new {message = "Không tìm thấy"});
+            }
+            var result = await _teamServices.CreateTeamAsync(currentUserId, request);
+            return Ok(new
+            {
+                message = result,
+                note = "Nếu bạn vừa được thăng cấp lên Captain"
+            });
         }
         [HttpPut("update/{id}")]
-        [Authorize(Roles = "admin")]
-        public async Task<IActionResult> UpdateTeam(int id, [FromBody] CreateTeamDto request)
+        [Authorize(Roles = "Captain")]
+        public async Task<IActionResult> UpdateTeam(int id, [FromBody] TeamUpserDto request)
         {
             var isSuccess = await _teamServices.UpdateTeamAsync(id, request);
             if (!isSuccess) return NotFound(new { message = "Không tìm thấy" });
             return Ok(new { message = "Cập nhật thành công" });
         }
         [HttpDelete("delete/{id}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = "Captain")]
         public async Task<IActionResult> DeleteTeam(int id)
         {
             var isSuccess = await _teamServices.DeleteTeamAsync(id);
             if (!isSuccess) return NotFound(new { message = "Không tìm thấy" });
             return Ok(new { message = "Đã xóa" });
         }
-        [HttpPost("{id}/upload-logo"), Authorize(Roles = "admin")]
+        [HttpPost("{id}/upload-logo"), Authorize(Roles = "Captain")]
         public async Task<IActionResult> UploadTeamLogo(int id, IFormFile file)
         {
             string imageUrl = await _fileUploadServices.UploadFileAsync(file, "TeamLogo");

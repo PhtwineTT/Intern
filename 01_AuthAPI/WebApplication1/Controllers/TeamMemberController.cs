@@ -31,14 +31,14 @@ namespace AuthAPI.Controllers
         }
         [HttpPost("create")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> CreateTeamMember([FromBody] CreateTeamMemberDto request)
+        public async Task<IActionResult> CreateTeamMember([FromBody] TeamMemberUpserDto request)
         {
             var result = await _teamMemberServices.CreateMemberAsync(request);
             return Ok(new { message = result });
         }
         [HttpPut("update/{id}")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> UpdateTeamMember(int id, [FromBody] CreateTeamMemberDto request)
+        public async Task<IActionResult> UpdateTeamMember(int id, [FromBody] TeamMemberUpserDto request)
         {
             var isSuccess = await _teamMemberServices.UpdateMemberAsync(id, request);
             if (!isSuccess) return NotFound(new { message = "Không tìm thấy" });

@@ -34,13 +34,13 @@ namespace AuthAPI.Controllers
             return Ok(result);
         }
         [HttpPost("create"), Authorize(Roles = "admin")]
-        public async Task<IActionResult> CreateVenue([FromBody] CreateVenueDto request)
+        public async Task<IActionResult> CreateVenue([FromBody] VenueUpserDto request)
         {
             var result = await _venueServices.CreateVenueAsync(request);
             return Ok(new { message = "Đã tạo" });
         }
         [HttpPut("update/{id}"), Authorize(Roles = "admin")]
-        public async Task<IActionResult> UpdateVenue(int id, [FromBody] CreateVenueDto request)
+        public async Task<IActionResult> UpdateVenue(int id, [FromBody] VenueUpserDto request)
         {
             var isSuccess = await _venueServices.UpdateVenueAsync(id, request);
             if (!isSuccess) return NotFound(new {message = "Không tìm thấy"});

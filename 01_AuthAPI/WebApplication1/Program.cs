@@ -1,6 +1,5 @@
 using AuthAPi.Services.Interface;
 using AuthAPI.DATA;
-using AuthAPI.Mappings;
 using AuthAPI.Repositories;
 using AuthAPI.Repositories.Interfaces;
 using AuthAPI.Services;
@@ -16,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. API & SWAGGER
 builder.Services.AddControllers().AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpClient();
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -58,10 +58,6 @@ builder.Services.AddScoped<ITeamServices, TeamServices>();
 builder.Services.AddScoped<IVenueServices, VenueServices>();
 builder.Services.AddSingleton<RateLimitServices>();
 builder.Services.AddScoped<IFileUploadServices, CloudinaryFileUploadServices>();
-builder.Services.AddAutoMapper(cfg =>
-{
-    cfg.AddProfile(typeof(MappingProfile));
-});
 
 // 4. BẢO MẬT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

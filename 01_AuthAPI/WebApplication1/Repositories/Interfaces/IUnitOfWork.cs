@@ -10,6 +10,7 @@ namespace AuthAPI.Repositories.Interfaces
         IGenericRepository<TeamMember> TeamMembers { get; }
         IGenericRepository<Venue> Venues { get; }
         IGenericRepository<Reward> Rewards { get; }
+        IGenericRepository<TournamentRegistration> TournamentRegistrations { get; }
         Task<int> CompleteAsync();
     }
 }

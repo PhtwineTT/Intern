@@ -26,6 +26,14 @@ namespace AuthAPI.Controllers
             return tokens != null ? Ok(tokens) : BadRequest(error);
         }
 
+        [HttpPost("external-login")]
+        [RateLimit(maxRequest: 5, timeLimit:60)]
+        public async Task<IActionResult> ExternalLogin(ExternalAuthDto request)
+        {
+            var (tokens, error) = await authService.ExternalLoginAsync(request);
+            return tokens != null ? Ok(tokens) : BadRequest(error);
+        }
+
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken(TokenDto request)
         {
@@ -35,22 +43,5 @@ namespace AuthAPI.Controllers
 
         [HttpGet("profile"), Authorize]
         public IActionResult Profile() => Ok("Xác thực thành công");
-
-        [HttpPut("get-admin/{id}")]
-        [Authorize]
-        public async Task<IActionResult> PromoteToAdmin(int id, [FromQuery] string secretCode)
-        {
-            var MY_SECRET_CODE = "Get Admin 1234";
-            if (secretCode != MY_SECRET_CODE)
-            {
-                return Unauthorized(new { message = "Code không đúng" });
-            }
-            var isSuccess = await authService.RoleAsync(id);
-            if (!isSuccess)
-            {
-                return NotFound(new { message = "Không tìm thấy" });
-            }   
-            return Ok(new { message = $"Đã thăng cấp tài khoản (ID: {id}) thành Admin" });
-        }
     }
 }

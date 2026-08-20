@@ -34,7 +34,7 @@ namespace AuthAPI.Controllers
 
         [HttpPost("create")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> CreateReward([FromBody] CreateRewardDto request)
+        public async Task<IActionResult> CreateReward([FromBody] RewardUpserDto request)
         {
             var result = await _rewardServices.CreateRewardAsync(request);
             return Ok(new { message = result });
@@ -42,7 +42,7 @@ namespace AuthAPI.Controllers
 
         [HttpPut("update/{id}")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> UpdateReward(int id, [FromBody] CreateRewardDto request)
+        public async Task<IActionResult> UpdateReward(int id, [FromBody] RewardUpserDto request)
         {
             var isSuccess = await _rewardServices.UpdateRewardAsync(id, request);
             if (!isSuccess) return NotFound(new { message = "Không tìm thấy" });

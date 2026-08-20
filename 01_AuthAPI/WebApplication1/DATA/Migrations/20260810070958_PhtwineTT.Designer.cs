@@ -4,6 +4,7 @@ using AuthAPI.DATA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260810070958_PhtwineTT")]
+    partial class PhtwineTT
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -58,8 +61,9 @@ namespace AuthAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CaptainId")
-                        .HasColumnType("int");
+                    b.Property<string>("CaptainId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LogoURL")
                         .IsRequired()
@@ -69,12 +73,10 @@ namespace AuthAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TournamentId")
+                    b.Property<int>("TournamentId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CaptainId");
 
                     b.HasIndex("TournamentId");
 
@@ -140,36 +142,6 @@ namespace AuthAPI.Migrations
                     b.HasIndex("VenueId");
 
                     b.ToTable("Tournaments");
-                });
-
-            modelBuilder.Entity("AuthAPI.Models.TournamentRegistration", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("RegistereAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TournamentId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TeamId");
-
-                    b.HasIndex("TournamentId");
-
-                    b.ToTable("TournamentRegistration");
                 });
 
             modelBuilder.Entity("AuthAPI.Models.User", b =>
@@ -244,17 +216,13 @@ namespace AuthAPI.Migrations
 
             modelBuilder.Entity("AuthAPI.Models.Team", b =>
                 {
-                    b.HasOne("AuthAPI.Models.User", "Captain")
-                        .WithMany()
-                        .HasForeignKey("CaptainId")
+                    b.HasOne("AuthAPI.Models.Tournament", "Tournament")
+                        .WithMany("Teams")
+                        .HasForeignKey("TournamentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AuthAPI.Models.Tournament", null)
-                        .WithMany("Teams")
-                        .HasForeignKey("TournamentId");
-
-                    b.Navigation("Captain");
+                    b.Navigation("Tournament");
                 });
 
             modelBuilder.Entity("AuthAPI.Models.TeamMember", b =>
@@ -277,36 +245,13 @@ namespace AuthAPI.Migrations
                     b.Navigation("Venue");
                 });
 
-            modelBuilder.Entity("AuthAPI.Models.TournamentRegistration", b =>
-                {
-                    b.HasOne("AuthAPI.Models.Team", "Team")
-                        .WithMany("Registration")
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AuthAPI.Models.Tournament", "Tournament")
-                        .WithMany("Registrations")
-                        .HasForeignKey("TournamentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Team");
-
-                    b.Navigation("Tournament");
-                });
-
             modelBuilder.Entity("AuthAPI.Models.Team", b =>
                 {
                     b.Navigation("Members");
-
-                    b.Navigation("Registration");
                 });
 
             modelBuilder.Entity("AuthAPI.Models.Tournament", b =>
                 {
-                    b.Navigation("Registrations");
-
                     b.Navigation("Teams");
                 });
 #pragma warning restore 612, 618
