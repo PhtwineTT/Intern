@@ -1,5 +1,6 @@
 ﻿using AuthAPI.Models.DTO.Auth;
 using AuthAPI.Models.DTO.Game;
+using AuthAPI.Security;
 using AuthAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +34,7 @@ namespace AuthAPI.Controllers
         }
 
         [HttpPost("create")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> CreateReward([FromBody] RewardUpserDto request)
         {
             var result = await _rewardServices.CreateRewardAsync(request);
@@ -41,7 +42,7 @@ namespace AuthAPI.Controllers
         }
 
         [HttpPut("update/{id}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> UpdateReward(int id, [FromBody] RewardUpserDto request)
         {
             var isSuccess = await _rewardServices.UpdateRewardAsync(id, request);
@@ -50,7 +51,7 @@ namespace AuthAPI.Controllers
         }
 
         [HttpDelete("delete/{id}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> DeleteReward(int id)
         {
             var isSuccess = await _rewardServices.DeleteRewardAsync(id);

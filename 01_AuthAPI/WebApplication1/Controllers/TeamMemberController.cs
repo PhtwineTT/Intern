@@ -1,5 +1,6 @@
 ﻿using AuthAPI.Models.DTO.Auth;
 using AuthAPI.Models.DTO.Game;
+using AuthAPI.Security;
 using AuthAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,14 +31,14 @@ namespace AuthAPI.Controllers
             return Ok(result);
         }
         [HttpPost("create")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> CreateTeamMember([FromBody] TeamMemberUpserDto request)
         {
             var result = await _teamMemberServices.CreateMemberAsync(request);
             return Ok(new { message = result });
         }
         [HttpPut("update/{id}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> UpdateTeamMember(int id, [FromBody] TeamMemberUpserDto request)
         {
             var isSuccess = await _teamMemberServices.UpdateMemberAsync(id, request);
@@ -46,7 +47,7 @@ namespace AuthAPI.Controllers
             return Ok(new { message = "Đã cập nhật" });
         }
         [HttpDelete("delete/{id}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> DeleteTeamMember(int id)
         {
             var isSuccess = await _teamMemberServices.DeleteMemberAsync(id);

@@ -41,9 +41,9 @@ namespace AuthAPI.Services
             team.CaptainId = currentUserID;
             await _unitOfWork.Teams.AddAsync(team);
             var user = await _unitOfWork .Users.GetByIdAsync(currentUserID);
-            if (user != null && user.Role.Equals("User", StringComparison.OrdinalIgnoreCase))
+            if (user != null && user.Role.Equals(AuthAPI.Security.Roles.User, StringComparison.OrdinalIgnoreCase))
             {
-                user.Role = "Captain";
+                user.Role = AuthAPI.Security.Roles.Captain;
                 _unitOfWork.Users.Update(user);
             }
             await _unitOfWork.CompleteAsync();

@@ -1,6 +1,7 @@
 ﻿using AuthAPi.Services.Interface;
 using AuthAPI.Models.DTO.Auth;
 using AuthAPI.Models.DTO.Game;
+using AuthAPI.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +34,7 @@ namespace AuthAPI.Controllers
             return Ok(result);
         }
         [HttpPost("create")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> CreateTournament([FromBody] TournamentUpserDto request)
         {
             var result = await _tournamentServices.CreateTournamentAsync(request);
@@ -44,7 +45,7 @@ namespace AuthAPI.Controllers
             return Ok(new { message = result });
         }
         [HttpPut("update/{id}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> UpdateTournament(int id, [FromBody] TournamentUpserDto request)
         {
             var isSuccess = await _tournamentServices.UpdateTournamentAsync(id, request);
@@ -56,7 +57,7 @@ namespace AuthAPI.Controllers
         }
 
         [HttpDelete("delete/{id}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> DeleteTournament(int id)
         {
             var isSuccess = await _tournamentServices.DeleteTournamentAsync(id);
@@ -65,7 +66,7 @@ namespace AuthAPI.Controllers
         }
 
         [HttpPost("{tournamentId}/register")]
-        [Authorize(Roles = "Captain")]
+        [Authorize(Roles = Roles.Captain)]
         public async Task<IActionResult> RegisterTeam(int tournamentId, [FromBody] RegisterTournamentDto request)
         {
             var userIDClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -82,7 +83,7 @@ namespace AuthAPI.Controllers
         }
 
         [HttpPatch("resgistration/{registrationId}/status")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> UpdateRegistrationStatus(int registrationId, [FromBody] UpdateRegistrationStatusDto request)
         {
             var result = await _tournamentServices.UpdateRegistrationStatusAsync(registrationId, request);

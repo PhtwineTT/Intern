@@ -1,4 +1,6 @@
-﻿namespace AuthAPI.Models
+﻿using AuthAPI.Security;
+
+namespace AuthAPI.Models
 {
     public class User
     {
@@ -7,7 +9,8 @@
         public string Password { get; set; } = string.Empty;
         public string? RefreshToken { get; set; }
         public DateTime ExpiryTime { get; set; }
-        public string Role { get; set; } = "User";
+        public string Role { get; set; } = Roles.User;
         public string Email { get; set; } = string.Empty;
     }
 }
+                    

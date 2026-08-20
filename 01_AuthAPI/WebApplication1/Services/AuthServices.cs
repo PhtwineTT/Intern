@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using Google.Apis.Auth;
 using System.Diagnostics.CodeAnalysis;
+using AuthAPI.Security;
 namespace AuthAPI.Services
 {
     public class AuthService : IAuthServcies 
@@ -40,6 +41,7 @@ namespace AuthAPI.Services
                 Username = request.Username,
                 Password = passwordHash,
                 Email = request.Email,
+                Role = Roles.User
             };
             await _unitOfWork.Users.AddAsync(user);
             await _unitOfWork.CompleteAsync();
@@ -86,7 +88,7 @@ namespace AuthAPI.Services
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role ?? "User")
+                new Claim(ClaimTypes.Role, user.Role ?? AuthAPI.Security.Roles.User)
             };
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -164,7 +166,7 @@ namespace AuthAPI.Services
                         Email = email,
                         Username = email,
                         Password = string.Empty,
-                        Role = "User",
+                        Role = Roles.User,
                         ExpiryTime = DateTime.UtcNow,
                     };
                     await _unitOfWork.Users.AddAsync(user);
@@ -188,6 +190,21 @@ namespace AuthAPI.Services
                 string errorMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 return (null, "Lỗi xác thực" + errorMsg);
             }
+        }
+        // Phân Role
+        public async Task<string> AssignRoleAsync(string userEmail,  string newRole)
+        {
+            var validRoles = new List<string> { AuthAPI.Security.Roles.User, AuthAPI.Security.Roles.Captain, AuthAPI.Security.Roles.Admin, AuthAPI.Security.Roles.Referee };
+            if (!validRoles.Contains(newRole))
+            {
+                return "Không hợp lệ";
+            }
+            var user = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+            if (user == null) return "Không tìm thấy người dùng";
+            user.Role = newRole;
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork .CompleteAsync();
+            return "Thành Công";
         }
     }
 }

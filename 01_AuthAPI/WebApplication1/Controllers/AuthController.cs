@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using AuthAPI.Security;
 using AuthAPI.Filters;
 using AuthAPI.Services.Interfaces;
 using AuthAPI.Models.DTO.Auth;
@@ -43,5 +44,17 @@ namespace AuthAPI.Controllers
 
         [HttpGet("profile"), Authorize]
         public IActionResult Profile() => Ok("Xác thực thành công");
+
+        [HttpPost("assign-role")]
+        [Authorize(Roles = Roles.Admin)]
+        public async Task<IActionResult> AssignRole([FromBody] AssignRoleDto request)
+        {
+            var result = await authService.AssignRoleAsync(request.Email, request.Role);
+            if (result == "Thành Công")
+            {
+                return Ok(new { message = "Đã cập nhật" });
+            }
+            return BadRequest(new {message = result});
+        }
     }
 }

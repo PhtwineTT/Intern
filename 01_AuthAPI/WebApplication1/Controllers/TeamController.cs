@@ -1,5 +1,6 @@
 ﻿using AuthAPI.Models.DTO.Auth;
 using AuthAPI.Models.DTO.Game;
+using AuthAPI.Security;
 using AuthAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,7 +50,7 @@ namespace AuthAPI.Controllers
             });
         }
         [HttpPut("update/{id}")]
-        [Authorize(Roles = "Captain")]
+        [Authorize(Roles = Roles.Captain)]
         public async Task<IActionResult> UpdateTeam(int id, [FromBody] TeamUpserDto request)
         {
             var isSuccess = await _teamServices.UpdateTeamAsync(id, request);
@@ -57,14 +58,14 @@ namespace AuthAPI.Controllers
             return Ok(new { message = "Cập nhật thành công" });
         }
         [HttpDelete("delete/{id}")]
-        [Authorize(Roles = "Captain")]
+        [Authorize(Roles = Roles.Captain)]
         public async Task<IActionResult> DeleteTeam(int id)
         {
             var isSuccess = await _teamServices.DeleteTeamAsync(id);
             if (!isSuccess) return NotFound(new { message = "Không tìm thấy" });
             return Ok(new { message = "Đã xóa" });
         }
-        [HttpPost("{id}/upload-logo"), Authorize(Roles = "Captain")]
+        [HttpPost("{id}/upload-logo"), Authorize(Roles = Roles.Captain)]
         public async Task<IActionResult> UploadTeamLogo(int id, IFormFile file)
         {
             string imageUrl = await _fileUploadServices.UploadFileAsync(file, "TeamLogo");
