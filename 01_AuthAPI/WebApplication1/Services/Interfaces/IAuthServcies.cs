@@ -5,6 +5,7 @@ namespace AuthAPI.Services.Interfaces
     {
         Task<string> RegisterAsync(RegisterDto request);
         Task<string> AssignRoleAsync(string userEmail, string newRole);
+        Task<bool> RevokeTokenAsync(string username);
         Task<(TokenDto? tokens, string error)> LoginAsync(LoginDto request);
         Task<(TokenDto? tokens, string error)> RefreshTokenAsync(TokenDto request);
         Task<(TokenDto? tokens, string error)> ExternalLoginAsync(ExternalAuthDto request);

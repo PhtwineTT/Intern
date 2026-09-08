@@ -12,6 +12,7 @@ using System.Text.Json;
 using Google.Apis.Auth;
 using System.Diagnostics.CodeAnalysis;
 using AuthAPI.Security;
+using Microsoft.AspNetCore.Identity;
 namespace AuthAPI.Services
 {
     public class AuthService : IAuthServcies 
@@ -58,27 +59,28 @@ namespace AuthAPI.Services
                 return (null, "Sai tài khoản hoặc mật khẩu");
             }
             var token = CreateToken(user);
-            var refreshToken = CreateRefreshToken();
-            user.RefreshToken = refreshToken;
+            var plainRefreshToken = CreateRefreshToken();
+            user.RefreshToken = HashRefreshToken(plainRefreshToken);
             user.ExpiryTime = DateTime.Now.AddDays(7);
             _unitOfWork.Users.Update(user);
             await _unitOfWork.CompleteAsync();
-            return (new TokenDto { AccessToken = token, RefreshToken = refreshToken }, string.Empty);
+            return (new TokenDto { AccessToken = token, RefreshToken = plainRefreshToken }, string.Empty);
         }
 
         // Cấp Refresh Token
         public async Task<(TokenDto? tokens, string error)> RefreshTokenAsync(TokenDto request)
         {
-            var user = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
+            var hashedInputToken = HashRefreshToken(request.RefreshToken); ;
+            var user = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.RefreshToken == hashedInputToken);
             if (user == null) return (null, "Token không tồn tại.");
             if (user.ExpiryTime < DateTime.Now) return (null, "Token đã hết hạn.");
             var newAccessToken = CreateToken(user);
-            var newRefreshToken = CreateRefreshToken();
-            user.RefreshToken = newRefreshToken;
+            var newPlainRefreshToken = CreateRefreshToken();
+            user.RefreshToken = HashRefreshToken(newPlainRefreshToken);
             user.ExpiryTime = DateTime.Now.AddDays(7);
             _unitOfWork.Users.Update(user);
             await _unitOfWork.CompleteAsync();
-            return (new TokenDto { AccessToken = newAccessToken, RefreshToken = newRefreshToken }, string.Empty);
+            return (new TokenDto { AccessToken = newAccessToken, RefreshToken = newPlainRefreshToken }, string.Empty);
         }
 
         // Tạo Token
@@ -97,7 +99,7 @@ namespace AuthAPI.Services
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddDays(1),
-                signingCredentials: creds
+                signingCredentials: creds   
             );
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -112,78 +114,27 @@ namespace AuthAPI.Services
                 return Convert.ToBase64String(randomNumber);
             }
         }
-        
+
         // Login bằng các nền tảng
         public async Task<(TokenDto? tokens, string error)> ExternalLoginAsync(ExternalAuthDto request)
         {
-            string email = "";
-            string name = "";
             try
             {
-                // Google
+                string email = string.Empty;
                 if (request.Provider.Equals("Google", StringComparison.OrdinalIgnoreCase))
                 {
-                    var clientId = _configuration["Google:ClientId"];
-                    if(string.IsNullOrEmpty(clientId))
-                    {
-                        clientId = _configuration["GoogleAuthSettings:ClientId"];
-                    };
-                    if (string.IsNullOrEmpty(clientId)) return (null, "Chưa có cấu hình");
-                    var settings = new GoogleJsonWebSignature.ValidationSettings
-                    {
-                        Audience = new List<string> { clientId },
-                    };
-                    var payload = await GoogleJsonWebSignature.ValidateAsync(request.Token, settings);
-                    email = payload.Email;
+                    email = await ValidateGoogleTokenAsync(request.Token);
                 }
-
-                // Facebook
                 else if (request.Provider.Equals("Facebook", StringComparison.OrdinalIgnoreCase))
                 {
-                    var httpClient = _httpCilentFactory.CreateClient();
-                    var fbUrl = $"https://graph.facebook.com/me?fields=id,email,name&access_token={request.Token}";
-                    var respone = await httpClient.GetAsync(fbUrl);
-                    if (!respone.IsSuccessStatusCode)
-                    {
-                        return (null, "Token Facebook này đã hết hạn");
-                    }
-                    var content = await respone.Content.ReadAsStringAsync();
-                    var fbData = JsonSerializer.Deserialize<JsonElement>(content);
-                    name = fbData.GetProperty("name").GetString() ?? "Facebook User";
-                    email = fbData.TryGetProperty("email", out var emailProp) ? emailProp.GetString() : $"{fbData.GetProperty("id").GetString()}@facebook.com";
+                    email = await ValidateFacebookTokenAsync(request.Token);
                 }
                 else
                 {
-                    return (null, "Nền tảng không được hỗ trợ");
+                    return (null, "Không được hỗ trợ");
                 }
-
-                // Lưu Database
-                var user = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.Email == email);
-                if (user == null)
-                {
-                    user = new User
-                    {
-                        Email = email,
-                        Username = email,
-                        Password = string.Empty,
-                        Role = Roles.User,
-                        ExpiryTime = DateTime.UtcNow,
-                    };
-                    await _unitOfWork.Users.AddAsync(user);
-                    await _unitOfWork.CompleteAsync();
-                }
-                string accessToken = CreateToken(user);
-                string refreshToken = CreateRefreshToken();
-                user.RefreshToken = refreshToken;
-                user.ExpiryTime = DateTime.Now.AddDays(7);
-                _unitOfWork.Users.Update(user);
-                await _unitOfWork.CompleteAsync();
-                var tokenDto = new TokenDto
-                {
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken,
-                };
-                return (tokenDto, string.Empty);
+                if (string.IsNullOrEmpty(email)) return (null, "Token không hợp lệ");
+                return await ProcessExternalUserAsyncs(email);
             }
             catch (Exception ex)
             {
@@ -191,6 +142,65 @@ namespace AuthAPI.Services
                 return (null, "Lỗi xác thực" + errorMsg);
             }
         }
+
+//---------------------------- Hàm bổ trợ -----------------------------//
+
+        // Google
+        private async Task<string> ValidateGoogleTokenAsync(string token)
+        {
+            var clientId = _configuration["Google:ClientID"];
+            if (string.IsNullOrEmpty(clientId))
+            {
+                clientId = _configuration["GoogleAuthSettings:ClientId"];
+            }
+            if (string.IsNullOrEmpty(clientId)) throw new Exception("Chưa cấu hinhd");
+            var settings = new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new List<string> { clientId },
+            };
+            var payload = await GoogleJsonWebSignature.ValidateAsync(token, settings);
+            return payload.Email;
+        }
+
+        //Facebook
+        private async Task<string> ValidateFacebookTokenAsync(string token)
+        {
+            var httpClient = _httpCilentFactory.CreateClient();
+            var fbUrl = $"https://graph.facebook.com/me?fields=id,email,name&access_token={token}";
+            var reponse = await httpClient.GetAsync(fbUrl);
+            if (!reponse.IsSuccessStatusCode) return string.Empty;
+            var content = await reponse.Content.ReadAsStringAsync();
+            var fbData = JsonSerializer.Deserialize<JsonElement>(content);
+            return fbData.TryGetProperty("email", out var emailProp) ? emailProp.GetString(): $"{fbData.GetProperty("id").GetString()}@facebook.com";
+        }
+
+        // Xử lý DB 
+        private async Task<(TokenDto? tokens, string error)> ProcessExternalUserAsyncs(string email)
+        {
+            var user = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+            {
+                user = new User
+                {
+                    Email = email,
+                    Username = email,
+                    Password = string.Empty,
+                    Role = Roles.User,
+                    ExpiryTime = DateTime.UtcNow
+                };
+                await _unitOfWork.Users.AddAsync(user);
+                await _unitOfWork.CompleteAsync();
+            }
+            string accessToken = CreateToken(user);
+            string plainRefreshToken = CreateRefreshToken();
+            user.RefreshToken = HashRefreshToken(plainRefreshToken);
+            user.ExpiryTime = DateTime.Now.AddDays(7);
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.CompleteAsync();
+            return (new TokenDto { AccessToken = accessToken, RefreshToken = plainRefreshToken }, string.Empty);
+        }
+
+
         // Phân Role
         public async Task<string> AssignRoleAsync(string userEmail,  string newRole)
         {
@@ -205,6 +215,26 @@ namespace AuthAPI.Services
             _unitOfWork.Users.Update(user);
             await _unitOfWork .CompleteAsync();
             return "Thành Công";
+        }
+
+        // Thu hồi Tokens
+        public async Task<bool> RevokeTokenAsync(string username)
+        {
+            var user = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return false;
+            user.RefreshToken = null;
+            _unitOfWork.Users.Update(user); ;
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
+        // Hash RefreshToken
+        private string HashRefreshToken(string token)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(token);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
         }
     }
 }

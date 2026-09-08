@@ -5,6 +5,7 @@ using AuthAPI.Filters;
 using AuthAPI.Services.Interfaces;
 using AuthAPI.Models.DTO.Auth;
 using Microsoft.EntityFrameworkCore.Query.Internal;
+using System.Reflection.Metadata.Ecma335;
 namespace AuthAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -55,6 +56,17 @@ namespace AuthAPI.Controllers
                 return Ok(new { message = "Đã cập nhật" });
             }
             return BadRequest(new {message = result});
+        }
+
+        [HttpPost("revoke")]
+        [Authorize]
+        public async Task<IActionResult> Revoke()
+        {
+            var username = User.Identity.Name;
+            if (string.IsNullOrEmpty(username)) return Unauthorized();
+            var result = await authService.RevokeTokenAsync(username);
+            if (!result) return BadRequest("Không thu hồi được");
+            return Ok("Đã đăng xuất");
         }
     }
 }
