@@ -1,0 +1,29 @@
+name: .NET CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Tải mã nguồn
+      uses: actions/checkout@v4
+      
+    - name: Cài đặt môi trường
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Khôi phục thư viện
+      run: dotnet restore
+
+    - name: Biên dịch dự án
+      run: dotnet build --no-restore
+
+    - name: Chạy Unit Tests
+      run: dotnet test --no-build --verbosity normal
+        
