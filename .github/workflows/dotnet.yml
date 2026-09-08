@@ -19,11 +19,11 @@ jobs:
         dotnet-version: 8.0.x
         
     - name: Khôi phục thư viện
-      run: dotnet restore
+      run: dotnet restore AuthAPI.Tests/AuthAPI.Tests.csproj
 
     - name: Biên dịch dự án
-      run: dotnet build --no-restore
+      run: dotnet build AuthAPI.Tests/AuthAPI.Tests.csproj --no-restore
 
     - name: Chạy Unit Tests
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test AuthAPI.Tests/AuthAPI.Tests.csproj --no-build --verbosity normal
         
